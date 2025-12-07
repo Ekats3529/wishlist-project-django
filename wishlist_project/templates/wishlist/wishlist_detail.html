@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{{ wishlist.title }}</h1>
+<p>{{ wishlist.description }}</p>
+<h3>Редактировать список</h3>
+<h2>Предметы</h2>
+<h3>Добавить предмет</h3>
+<ul>
+    {% for item in wishlist.items %}
+    <li>
+        <strong>{{ item.title }}</strong>
+        {% if item.price %} - ${{ item.price }}{% endif %}
+        {% if item.is_reserved %} (Зарезервирован){% endif %}
+        Редактировать
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

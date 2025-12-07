@@ -6,7 +6,7 @@
 <ul>
     {% for wishlist in wishlists %}
     <li>
-        {{ wishlist.title }}
+        <a href="{% url 'wishlist_detail' wishlist.id %}">{{ wishlist.title }}</a>
         {% if wishlist.is_public %}(Публичный){% else %}(Приватный){% endif %}
     </li>
     {% endfor %}
