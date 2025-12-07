@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="wishlist-container"></div>
 <h1>{{ wishlist.title }}</h1>
 <p>{{ wishlist.description }}</p>
 <h3>Редактировать список</h3>
@@ -16,4 +17,5 @@
     </li>
     {% endfor %}
 </ul>
+</div>
 {% endblock %}

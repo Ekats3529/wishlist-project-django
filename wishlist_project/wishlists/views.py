@@ -95,7 +95,6 @@ def index(request):
 def wishlist_detail(request, wishlist_id):
     template = 'wishlist/wishlist_detail.html'
     ids = [wishlist['id'] for wishlist in wishlists]
-    print(ids)
     if wishlist_id in ids:
         context = {'wishlist': wishlists[ids.index(wishlist_id)]}
         return render(request, template, context)
