@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Списки желаний</h1>
+<h2>Создать новый список</h2>
+<ul>
+    {% for wishlist in wishlists %}
+    <li>
+        {{ wishlist.title }}
+        {% if wishlist.is_public %}(Публичный){% else %}(Приватный){% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
