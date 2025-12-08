@@ -1,10 +1,10 @@
 {% load static %}
 <header>
-  <nav class="navbar navbar-expand-lg navbar-light bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(90deg, #464ee7, #0c15bd);">
     <div class="container">
-      <a class="navbar-brand text-white" href="{% url 'wishlists:index' %}">
-        <img src="{% static 'img/logo.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
-        Wishlist
+      <a class="navbar-brand d-flex align-items-center" href="{% url 'wishlists:index' %}">
+        <img src="{% static 'img/logo.png' %}" width="35" height="35" class="d-inline-block align-top me-2" alt="">
+        <span class="fw-bold">Wishlist</span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
               aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -14,10 +14,10 @@
       <div class="collapse navbar-collapse" id="navbarContent">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.view_name == 'index' %}text-white{% endif %}" href="{% url 'wishlists:index' %}">Списки желаний</a>
+            <a class="nav-link {% if request.resolver_match.view_name == 'wishlists:index' %}active fw-bold{% endif %}" href="{% url 'wishlists:index' %}">Списки желаний</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.view_name == 'about' %}text-white{% endif %}" href="{% url 'pages:about' %}">О проекте</a>
+            <a class="nav-link {% if request.resolver_match.view_name == 'pages:about' %}active fw-bold{% endif %}" href="{% url 'pages:about' %}">О проекте</a>
           </li>
         </ul>
 

@@ -107,3 +107,24 @@ def edit_profile(request):
 
     return render(request, template, {'form': form})
 
+
+@login_required
+def edit_wishlist(request, wishlist_id):
+    """Редактирование существующего wishlist"""
+
+    wishlist = get_object_or_404(Wishlist, pk=wishlist_id)
+
+    if wishlist.owner != request.user:
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    template = 'wishlist/edit_wishlist.html'
+
+    if request.method == 'POST':
+        form = WishlistForm(request.POST, instance=wishlist)
+        if form.is_valid():
+            form.save()
+            return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+    else:
+        form = WishlistForm(instance=wishlist)
+
+    return render(request, template, {'form': form, 'wishlist': wishlist})
