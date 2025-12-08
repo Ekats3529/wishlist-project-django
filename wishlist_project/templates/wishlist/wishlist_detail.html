@@ -26,6 +26,9 @@
   <!-- Заголовок для предметов -->
   <h2 class="mb-4">Предметы</h2>
 
+  <!-- Добавить новый предмет -->
+  <a href="{% url 'wishlists:add_item' wishlist.id %}" class="btn btn-primary mb-4">Добавить предмет</a>
+
   <!-- Сетка предметов -->
   {% if wishlist.items.all %}
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
@@ -50,7 +53,17 @@
             <span class="badge bg-success">Доступен</span>
             {% endif %}
           </p>
-          
+          <div class="d-flex gap-2 mt-2">
+            <a href="{% url 'wishlists:edit_item' item.id %}" class="btn btn-outline-primary btn-sm flex-fill">
+                Редактировать
+            </a>
+            <form action="{% url 'wishlists:delete_item' item.id %}" method="post" class="flex-fill">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                    Удалить
+                </button>
+            </form>
+          </div>
         </div>
         <div class="card-footer text-muted">
           Создан: {{ item.created_at|date:"d.m.Y H:i" }}

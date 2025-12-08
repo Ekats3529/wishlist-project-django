@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from .models import Wishlist, Item
-from .forms import WishlistForm, RegistrationForm, ProfileEditForm
+from .forms import WishlistForm, RegistrationForm, ProfileEditForm, ItemForm
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
@@ -128,3 +128,68 @@ def edit_wishlist(request, wishlist_id):
         form = WishlistForm(instance=wishlist)
 
     return render(request, template, {'form': form, 'wishlist': wishlist})
+
+
+@login_required
+def add_item(request, wishlist_id):
+    """Добавление нового предмета в wishlist"""
+    wishlist = get_object_or_404(Wishlist, pk=wishlist_id)
+
+    # Проверяем, что текущий пользователь — владелец списка
+    if wishlist.owner != request.user:
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    template = 'wishlist/add_item.html'
+
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.wishlist = wishlist
+            item.save()
+            return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+    else:
+        form = ItemForm()
+
+    return render(request, template, {'form': form, 'wishlist': wishlist})
+
+
+@login_required
+def edit_item(request, item_id):
+    """Редактирование существующего предмета в wishlist"""
+    item = get_object_or_404(Item, pk=item_id)
+    wishlist = item.wishlist
+
+    # Проверяем, что текущий пользователь — владелец списка
+    if wishlist.owner != request.user:
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    template = 'wishlist/edit_item.html'
+
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+    else:
+        form = ItemForm(instance=item)
+
+    return render(request, template, {'form': form, 'wishlist': wishlist, 'item': item})
+
+
+@login_required
+def delete_item(request, item_id):
+    """Удаление предмета из wishlist"""
+    
+    item = get_object_or_404(Item, pk=item_id)
+    wishlist = item.wishlist
+
+    # Проверяем, что текущий пользователь — владелец списка
+    if wishlist.owner != request.user:
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    if request.method == 'POST':
+        item.delete()
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    return render(request, 'wishlist/delete_item_confirm.html', {'item': item, 'wishlist': wishlist})

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+    <h1>Добавить предмет в "{{ wishlist.title }}"</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary mt-2">Добавить</button>
+    </form>
+</div>
+{% endblock %}
