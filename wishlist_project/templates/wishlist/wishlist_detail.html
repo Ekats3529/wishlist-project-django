@@ -8,7 +8,7 @@
 <h2>Предметы</h2>
 <h3>Добавить предмет</h3>
 <ul>
-    {% for item in wishlist.items %}
+    {% for item in wishlist.items.all %}
     <li>
         <strong>{{ item.title }}</strong>
         {% if item.price %} - ${{ item.price }}{% endif %}
