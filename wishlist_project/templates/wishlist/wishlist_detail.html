@@ -1,21 +1,80 @@
 {% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}
+  {{ wishlist.title }} — Wishlist
+{% endblock %}
 
 {% block content %}
-<div class="wishlist-container"></div>
-<h1>{{ wishlist.title }}</h1>
-<p>{{ wishlist.description }}</p>
-<h3>Редактировать список</h3>
-<h2>Предметы</h2>
-<h3>Добавить предмет</h3>
-<ul>
-    {% for item in wishlist.items %}
-    <li>
-        <strong>{{ item.title }}</strong>
-        {% if item.price %} - ${{ item.price }}{% endif %}
-        {% if item.is_reserved %} (Зарезервирован){% endif %}
-        Редактировать
-    </li>
+<div class="container py-5">
+
+  <!-- Заголовок и описание списка -->
+  <div class="mb-4">
+    <h1 class="mb-2">{{ wishlist.title }}</h1>
+    <p class="text-muted">{{ wishlist.description }}</p>
+    <p>
+      {% if wishlist.is_public %}
+        <span class="badge bg-success">Публичный</span>
+      {% else %}
+        <span class="badge bg-secondary">Приватный</span>
+      {% endif %}
+      Создан: {{ wishlist.created_at|date:"d.m.Y H:i" }}
+    </p>
+    <a href="{% url 'wishlists:edit_wishlist' wishlist.id %}" class="btn btn-outline-primary btn-sm">Редактировать список</a>
+  </div>
+
+  <!-- Заголовок для предметов -->
+  <h2 class="mb-4">Предметы</h2>
+
+  <!-- Добавить новый предмет -->
+  <a href="{% url 'wishlists:add_item' wishlist.id %}" class="btn btn-primary mb-4">Добавить предмет</a>
+
+  <!-- Сетка предметов -->
+  {% if wishlist.items.all %}
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for item in wishlist.items.all %}
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        {% if item.image %}
+        <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.title }}">
+        {% endif %}
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">{{ item.title }}</h5>
+          {% if item.price %}
+          <p class="card-text"><strong>Цена:</strong> ${{ item.price }}</p>
+          {% endif %}
+          {% if item.description %}
+          <p class="card-text">{{ item.description|truncatechars:100 }}</p>
+          {% endif %}
+          <p class="mt-auto">
+            {% if item.is_reserved %}
+            <span class="badge bg-warning text-dark">Зарезервирован</span>
+            {% else %}
+            <span class="badge bg-success">Доступен</span>
+            {% endif %}
+          </p>
+          <div class="d-flex gap-2 mt-2">
+            <a href="{% url 'wishlists:edit_item' item.id %}" class="btn btn-outline-primary btn-sm flex-fill">
+                Редактировать
+            </a>
+            <form action="{% url 'wishlists:delete_item' item.id %}" method="post" class="flex-fill">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                    Удалить
+                </button>
+            </form>
+          </div>
+        </div>
+        <div class="card-footer text-muted">
+          Создан: {{ item.created_at|date:"d.m.Y H:i" }}
+        </div>
+      </div>
+    </div>
     {% endfor %}
-</ul>
+  </div>
+  {% else %}
+  <p class="text-center">В этом списке пока нет предметов.</p>
+  {% endif %}
+
 </div>
 {% endblock %}

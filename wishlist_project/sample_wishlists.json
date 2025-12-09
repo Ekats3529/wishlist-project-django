@@ -1,0 +1,357 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "username": "testuser",
+      "password": "pbkdf2_sha256$600000$example$hash",
+      "is_superuser": false,
+      "is_staff": false,
+      "is_active": true
+    }
+  },
+
+  {
+    "model": "wishlists.wishlist",
+    "pk": 1,
+    "fields": {
+      "title": "Праздничные подарки",
+      "description": "Идеи для праздников",
+      "owner": 1,
+      "is_public": true,
+      "created_at": "2024-12-01T12:00:00Z",
+      "updated_at": "2024-12-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "wishlists.wishlist",
+    "pk": 2,
+    "fields": {
+      "title": "Дом",
+      "description": "Всё для уюта",
+      "owner": 1,
+      "is_public": true,
+      "created_at": "2024-12-02T10:00:00Z",
+      "updated_at": "2024-12-02T10:00:00Z"
+    }
+  },
+  {
+    "model": "wishlists.wishlist",
+    "pk": 3,
+    "fields": {
+      "title": "Гаджеты",
+      "description": "Техника и электроника",
+      "owner": 1,
+      "is_public": false,
+      "created_at": "2024-12-03T09:00:00Z",
+      "updated_at": "2024-12-03T09:00:00Z"
+    }
+  },
+
+  {
+    "model": "wishlists.item",
+    "pk": 1,
+    "fields": {
+      "wishlist": 1,
+      "title": "Плед уютный",
+      "description": "Мягкий, зимний",
+      "price": "1999.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-01T12:10:00Z",
+      "updated_at": "2024-12-01T12:10:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 2,
+    "fields": {
+      "wishlist": 1,
+      "title": "Ароматические свечи",
+      "description": "",
+      "price": "799.00",
+      "link": "",
+      "image": "",
+      "is_reserved": true,
+      "created_at": "2024-12-01T12:12:00Z",
+      "updated_at": "2024-12-01T12:12:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 3,
+    "fields": {
+      "wishlist": 1,
+      "title": "Настольная игра",
+      "description": "Для компании",
+      "price": "2490.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-01T12:15:00Z",
+      "updated_at": "2024-12-01T12:15:00Z"
+    }
+  },
+
+  {
+    "model": "wishlists.item",
+    "pk": 4,
+    "fields": {
+      "wishlist": 2,
+      "title": "Кофейный столик",
+      "description": "Деревянный",
+      "price": "5499.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-02T10:05:00Z",
+      "updated_at": "2024-12-02T10:05:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 5,
+    "fields": {
+      "wishlist": 2,
+      "title": "Напольная лампа",
+      "description": "",
+      "price": "3200.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-02T10:06:00Z",
+      "updated_at": "2024-12-02T10:06:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 6,
+    "fields": {
+      "wishlist": 2,
+      "title": "Органайзер",
+      "description": "Для кухни",
+      "price": "750.00",
+      "link": "",
+      "image": "",
+      "is_reserved": true,
+      "created_at": "2024-12-02T10:08:00Z",
+      "updated_at": "2024-12-02T10:08:00Z"
+    }
+  },
+
+  {
+    "model": "wishlists.item",
+    "pk": 7,
+    "fields": {
+      "wishlist": 3,
+      "title": "Sony WH-1000XM5",
+      "description": "Наушники",
+      "price": "25990.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-03T09:30:00Z",
+      "updated_at": "2024-12-03T09:30:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 8,
+    "fields": {
+      "wishlist": 3,
+      "title": "Powerbank 20000 mAh",
+      "description": "",
+      "price": "3490.00",
+      "link": "",
+      "image": "",
+      "is_reserved": true,
+      "created_at": "2024-12-03T09:32:00Z",
+      "updated_at": "2024-12-03T09:32:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 9,
+    "fields": {
+      "wishlist": 3,
+      "title": "Умная лампочка",
+      "description": "Wi-Fi",
+      "price": "990.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-03T09:35:00Z",
+      "updated_at": "2024-12-03T09:35:00Z"
+    }
+  },
+
+  {
+    "model": "wishlists.item",
+    "pk": 10,
+    "fields": {
+      "wishlist": 1,
+      "title": "Термокружка",
+      "description": "Металлическая",
+      "price": "990.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-01T12:20:00Z",
+      "updated_at": "2024-12-01T12:20:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 11,
+    "fields": {
+      "wishlist": 1,
+      "title": "Шарф",
+      "description": "Зимний",
+      "price": "1299.00",
+      "link": "",
+      "image": "",
+      "is_reserved": true,
+      "created_at": "2024-12-01T12:22:00Z",
+      "updated_at": "2024-12-01T12:22:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 12,
+    "fields": {
+      "wishlist": 1,
+      "title": "Книга '1984'",
+      "description": "",
+      "price": "490.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-01T12:25:00Z",
+      "updated_at": "2024-12-01T12:25:00Z"
+    }
+  },
+
+  {
+    "model": "wishlists.item",
+    "pk": 13,
+    "fields": {
+      "wishlist": 2,
+      "title": "Зеркало",
+      "description": "Круглое",
+      "price": "2390.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-02T10:12:00Z",
+      "updated_at": "2024-12-02T10:12:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 14,
+    "fields": {
+      "wishlist": 2,
+      "title": "Картина",
+      "description": "Абстракция",
+      "price": "1800.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-02T10:15:00Z",
+      "updated_at": "2024-12-02T10:15:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 15,
+    "fields": {
+      "wishlist": 2,
+      "title": "Подушка декоративная",
+      "description": "",
+      "price": "590.00",
+      "link": "",
+      "image": "",
+      "is_reserved": true,
+      "created_at": "2024-12-02T10:18:00Z",
+      "updated_at": "2024-12-02T10:18:00Z"
+    }
+  },
+
+  {
+    "model": "wishlists.item",
+    "pk": 16,
+    "fields": {
+      "wishlist": 3,
+      "title": "Bluetooth колонка",
+      "description": "Водонепроницаемая",
+      "price": "2990.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-03T09:40:00Z",
+      "updated_at": "2024-12-03T09:40:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 17,
+    "fields": {
+      "wishlist": 3,
+      "title": "Мини штатив",
+      "description": "",
+      "price": "690.00",
+      "link": "",
+      "image": "",
+      "is_reserved": true,
+      "created_at": "2024-12-03T09:43:00Z",
+      "updated_at": "2024-12-03T09:43:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 18,
+    "fields": {
+      "wishlist": 3,
+      "title": "USB-хаб",
+      "description": "",
+      "price": "1290.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-03T09:46:00Z",
+      "updated_at": "2024-12-03T09:46:00Z"
+    }
+  },
+
+  {
+    "model": "wishlists.item",
+    "pk": 19,
+    "fields": {
+      "wishlist": 1,
+      "title": "Настольная лампа",
+      "description": "",
+      "price": "1590.00",
+      "link": "",
+      "image": "",
+      "is_reserved": false,
+      "created_at": "2024-12-01T12:28:00Z",
+      "updated_at": "2024-12-01T12:28:00Z"
+    }
+  },
+  {
+    "model": "wishlists.item",
+    "pk": 20,
+    "fields": {
+      "wishlist": 1,
+      "title": "Пазл 1000 деталей",
+      "description": "",
+      "price": "890.00",
+      "link": "",
+      "image": "",
+      "is_reserved": true,
+      "created_at": "2024-12-01T12:32:00Z",
+      "updated_at": "2024-12-01T12:32:00Z"
+    }
+  }
+]

@@ -1,101 +1,195 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from .models import Wishlist
-from .forms import WishlistForm
-from django.urls import reverse_lazy
+from .models import Wishlist, Item
+from .forms import WishlistForm, RegistrationForm, ProfileEditForm, ItemForm
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+from django.contrib.auth.decorators import login_required
 
-# Пример данных для тестирования
+User = get_user_model()
 
-wishlists = [
-    {
-        "id": 1,
-        "title": "День рождения Екатерины",
-        "description": "Все, что я хочу на день рождения",
-        "owner": "ekate",
-        "is_public": True,
-        "items": [
-            {
-                "title": "Samsung Galaxy Watch",
-                "description": "Умные часы с новыми функциями",
-                "price": 500,
-                "link": "https://example.com/samsung-watch",
-                "image_url": "https://example.com/images/samsung-watch.jpg",
-                "is_reserved": False
-            },
-            {
-                "title": "Книга 'Python для начинающих'",
-                "description": "Очень интересная книга по Python",
-                "price": 25,
-                "link": "https://example.com/python-book",
-                "image_url": "https://example.com/images/python-book.jpg",
-                "is_reserved": True
-            }
-        ]
-    },
-    {
-        "id": 2,
-        "title": "Новогодние подарки",
-        "description": "Всё, что хочется на Новый год",
-        "owner": "alex",
-        "is_public": False,
-        "items": [
-            {
-                "title": "Наушники Bose",
-                "description": "Шумоподавляющие наушники",
-                "price": 300,
-                "link": "https://example.com/bose-headphones",
-                "image_url": "https://example.com/images/bose-headphones.jpg",
-                "is_reserved": False
-            },
-            {
-                "title": "Настольная игра 'Каркассон'",
-                "description": "Игра для весёлых вечеров",
-                "price": 40,
-                "link": "https://example.com/carcassonne",
-                "image_url": "https://example.com/images/carcassonne.jpg",
-                "is_reserved": False
-            }
-        ]
-    },
-    {
-        "id": 3,
-        "title": "Список желаний на отпуск",
-        "description": "Все нужные вещи для поездки",
-        "owner": "maria",
-        "is_public": True,
-        "items": [
-            {
-                "title": "Портативный аккумулятор",
-                "description": "Чтобы телефон не разрядился в дороге",
-                "price": 35,
-                "link": "https://example.com/powerbank",
-                "image_url": "https://example.com/images/powerbank.jpg",
-                "is_reserved": False
-            },
-            {
-                "title": "Солнцезащитные очки Ray-Ban",
-                "description": "Классные очки для отдыха",
-                "price": 150,
-                "link": "https://example.com/rayban",
-                "image_url": "https://example.com/images/rayban.jpg",
-                "is_reserved": True
-            }
-        ]
-    }
-]
-
+def get_public_wishlists():
+    return Wishlist.objects.filter(
+        is_public=True
+    )
 
 
 def index(request):
     template = 'wishlist/index.html'
-    context = {'wishlists': wishlists[::-1]}
+    wishlists = (
+        get_public_wishlists()
+        .order_by('-created_at')
+        .all()
+    )
+    context = {'wishlists': wishlists}
     return render(request, template, context)
 
 
 def wishlist_detail(request, wishlist_id):
     template = 'wishlist/wishlist_detail.html'
-    ids = [wishlist['id'] for wishlist in wishlists]
-    if wishlist_id in ids:
-        context = {'wishlist': wishlists[ids.index(wishlist_id)]}
-        return render(request, template, context)
-    return render(request, template_name='wishlist/index.html')
+    wishlist = get_object_or_404(
+        Wishlist.objects.all(),
+        pk=wishlist_id
+    )
+    context = {'wishlist': wishlist}
+    return render(request, template, context)
+
+
+def register(request):
+    """Регистрация пользователя"""
+
+    template = 'registration/registration_form.html'
+
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = RegistrationForm()
+
+    return render(request, template, {'form': form})
+
+
+@login_required
+def create_wishlist(request):
+    """Создание нового wishlist"""
+
+    template = 'wishlist/create_wishlist.html'
+    
+    if request.method == 'POST':
+        form = WishlistForm(request.POST)
+        if form.is_valid():
+            wishlist = form.save(commit=False)
+            wishlist.owner = request.user       
+            wishlist.save()                     
+            return redirect('wishlists:index')
+    else:
+        form = WishlistForm()
+
+    return render(request, template, {'form': form})
+
+
+def user_profile(request, username):
+    """Страница профиля пользователя с пагинацией"""
+
+    template = 'wishlist/profile.html'
+
+    profile = get_object_or_404(User, username=username)
+
+    if request.user == profile:
+        wishlist_list = Wishlist.objects.filter(owner=profile).select_related(
+            'owner'
+        ).order_by('-updated_at').all()
+    else:
+        wishlist_list = get_public_wishlists().filter(author=profile, ).order_by('-updated_at').all()
+
+
+    return render(request, template, {
+        'profile': profile,
+        'wishlists': wishlist_list
+    })
+
+
+@login_required
+def edit_profile(request):
+    """Редактирование информации профиля"""
+
+    template = 'registration/registration_form.html'
+
+    if request.method == 'POST':
+        form = ProfileEditForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('wishlist:profile', username=request.user.username)
+    else:
+        form = ProfileEditForm(instance=request.user)
+
+    return render(request, template, {'form': form})
+
+
+@login_required
+def edit_wishlist(request, wishlist_id):
+    """Редактирование существующего wishlist"""
+
+    wishlist = get_object_or_404(Wishlist, pk=wishlist_id)
+
+    if wishlist.owner != request.user:
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    template = 'wishlist/edit_wishlist.html'
+
+    if request.method == 'POST':
+        form = WishlistForm(request.POST, instance=wishlist)
+        if form.is_valid():
+            form.save()
+            return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+    else:
+        form = WishlistForm(instance=wishlist)
+
+    return render(request, template, {'form': form, 'wishlist': wishlist})
+
+
+@login_required
+def add_item(request, wishlist_id):
+    """Добавление нового предмета в wishlist"""
+    wishlist = get_object_or_404(Wishlist, pk=wishlist_id)
+
+    # Проверяем, что текущий пользователь — владелец списка
+    if wishlist.owner != request.user:
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    template = 'wishlist/add_item.html'
+
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.wishlist = wishlist
+            item.save()
+            return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+    else:
+        form = ItemForm()
+
+    return render(request, template, {'form': form, 'wishlist': wishlist})
+
+
+@login_required
+def edit_item(request, item_id):
+    """Редактирование существующего предмета в wishlist"""
+    item = get_object_or_404(Item, pk=item_id)
+    wishlist = item.wishlist
+
+    # Проверяем, что текущий пользователь — владелец списка
+    if wishlist.owner != request.user:
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    template = 'wishlist/edit_item.html'
+
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES, instance=item)
+        if form.is_valid():
+            form.save()
+            return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+    else:
+        form = ItemForm(instance=item)
+
+    return render(request, template, {'form': form, 'wishlist': wishlist, 'item': item})
+
+
+@login_required
+def delete_item(request, item_id):
+    """Удаление предмета из wishlist"""
+    
+    item = get_object_or_404(Item, pk=item_id)
+    wishlist = item.wishlist
+
+    # Проверяем, что текущий пользователь — владелец списка
+    if wishlist.owner != request.user:
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    if request.method == 'POST':
+        item.delete()
+        return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+
+    return render(request, 'wishlist/delete_item_confirm.html', {'item': item, 'wishlist': wishlist})
