@@ -5,6 +5,9 @@ from .forms import WishlistForm, RegistrationForm, ProfileEditForm, ItemForm
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from .models import Item
+from .recsys import get_similar_items
 
 User = get_user_model()
 
@@ -193,3 +196,13 @@ def delete_item(request, item_id):
         return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
 
     return render(request, 'wishlist/delete_item_confirm.html', {'item': item, 'wishlist': wishlist})
+
+
+
+
+def item_recommendations(request, item_id):
+    item = Item.objects.get(id=item_id)
+    similar_items = get_similar_items(item)
+    data = [{'id': i.id, 'title': i.name} for i in similar_items]
+    print(data)
+    return JsonResponse({'recommendations': data})
