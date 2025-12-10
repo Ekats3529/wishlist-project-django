@@ -1,0 +1,87 @@
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #ffffff;
+}
+
+.card {
+    background-color: #1e1e1e;
+    border-color: #333;
+}
+
+.form-control {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    border-color: #333;
+}
+
+.form-control:focus {
+    background-color: #1e1e1e;
+    border-color: #555;
+    color: #fff;
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.btn-primary {
+    background-color: #3a3f44;
+    border-color: #4b5157;
+}
+
+.btn-outline-primary {
+    border-color: #888;
+    color: #ddd;
+}
+
+.btn-outline-primary:hover {
+    background-color: #888;
+    color: #000;
+}
+
+.dark-theme .header-navbar {
+    background: linear-gradient(90deg, #2c2f85, #0a0f6a) !important;
+}
+
+
+a {
+    color: #8ab4f8;
+}
+
+a:hover {
+    color: #aecbfa;
+}
+
+
+/* Footer в темной теме */
+.site-footer {
+    background-color: #1e1e1e !important;
+    border-top: 1px solid #333;
+}
+
+.site-footer .text-muted {
+    color: #bbbbbb !important;
+}
+
+.dark-theme .card {
+    background-color: #1e1e1e;
+    border-color: #333;
+    color: #e0e0e0;
+}
+
+/* Тёмная тема для горизонтального списка профиля */
+ul.list-group.list-group-horizontal > li.list-group-item {
+    background-color: #1e1e1e !important;
+    border-color: #333 !important;        
+    color: #e0e0e0 !important;           
+}
+
+ul.list-group.list-group-horizontal > li.list-group-item.text-muted {
+    color: #bbbbbb !important; 
+}
+
+

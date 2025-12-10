@@ -6,18 +6,22 @@
         <img src="{% static 'img/logo.png' %}" width="35" height="35" class="d-inline-block align-top me-2" alt="">
         <span class="fw-bold">Wishlist</span>
       </a>
+
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
               aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="collapse navbar-collapse" id="navbarContent">
+
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.view_name == 'wishlists:index' %}active fw-bold{% endif %}" href="{% url 'wishlists:index' %}">Списки желаний</a>
+            <a class="nav-link {% if request.resolver_match.view_name == 'wishlists:index' %}active fw-bold{% endif %}"
+               href="{% url 'wishlists:index' %}">Списки желаний</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.view_name == 'pages:about' %}active fw-bold{% endif %}" href="{% url 'pages:about' %}">О проекте</a>
+            <a class="nav-link {% if request.resolver_match.view_name == 'pages:about' %}active fw-bold{% endif %}"
+               href="{% url 'pages:about' %}">О проекте</a>
           </li>
         </ul>
 
@@ -27,21 +31,31 @@
               <a class="btn btn-outline-light me-2" href="{% url 'wishlists:create' %}">Создать список</a>
             </li>
             <li class="nav-item">
-              <a class="btn btn-outline-light me-2" href="{% url 'wishlists:profile' user.username %}">{{ user.username }}</a>
+              <a class="btn btn-outline-light me-2" href="{% url 'wishlists:profile' user.username %}">
+                {{ user.username }}
+              </a>
             </li>
             <li class="nav-item">
-              <a class="btn btn-outline-light" href="{% url 'logout' %}">Выйти</a>
+              <a class="btn btn-outline-light me-3" href="{% url 'logout' %}">Выйти</a>
             </li>
           {% else %}
             <li class="nav-item">
               <a class="btn btn-outline-light me-2" href="{% url 'login' %}">Войти</a>
             </li>
             <li class="nav-item">
-              <a class="btn btn-outline-light" href="{% url 'wishlists:register' %}">Регистрация</a>
+              <a class="btn btn-outline-light me-3" href="{% url 'wishlists:register' %}">Регистрация</a>
             </li>
           {% endif %}
+
+          <!-- Переключатель темы -->
+          <li class="nav-item">
+            <button id="theme-toggle" class="btn btn-outline-light ms-3">Темная тема</button>
+          </li>
         </ul>
+
       </div>
     </div>
   </nav>
 </header>
+
+<script src="{% static 'js/theme.js' %}"></script>

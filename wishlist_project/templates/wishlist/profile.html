@@ -6,6 +6,7 @@
 {% block content %}
 <div class="container py-5">
   <h1 class="mb-4 text-center">Страница пользователя {{ profile.username }}</h1>
+  <div class="dark-theme">
   <ul class="list-group list-group-horizontal justify-content-center mb-3">
     <li class="list-group-item text-muted">
       Имя пользователя: {% if profile.get_full_name %}{{ profile.get_full_name }}{% else %}не указано{% endif %}
@@ -17,6 +18,7 @@
       Роль: {% if profile.is_staff %}Админ{% else %}Пользователь{% endif %}
     </li>
   </ul>
+  </div>
   {% if user.is_authenticated and request.user == profile %}
   <div class="text-center mb-5">
     <a class="btn btn-outline-secondary btn-sm me-2" href="{% url 'wishlists:edit_profile' %}">Редактировать профиль</a>
