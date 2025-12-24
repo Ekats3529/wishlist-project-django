@@ -203,14 +203,35 @@ def delete_item(request, item_id):
 
 
 def wishlist_recommendations(request, wishlist_id):
-    wishlist = get_object_or_404(Wishlist, id=wishlist_id)
-
-    # Показываем только владельцу
-    if not request.user.is_authenticated or request.user != wishlist.owner:
-        return HttpResponseForbidden('Not allowed')
-
-    data = get_wishlist_recommendations(wishlist)
-    return JsonResponse(data, safe=False)
+    """API endpoint для получения рекомендаций"""
+    try:
+        wishlist = get_object_or_404(Wishlist, id=wishlist_id)
+        
+        # Проверяем права доступа
+        if not wishlist.is_public and request.user != wishlist.owner:
+            return JsonResponse({'error': 'Доступ запрещен'}, status=403)
+        
+        # Получаем рекомендации
+        recommendations = get_wishlist_recommendations(wishlist)
+        
+        # Добавляем дополнительную информацию
+        for rec in recommendations:
+            rec['type'] = 'recommendation'
+            rec['can_add'] = request.user.is_authenticated and request.user == wishlist.owner
+        
+        return JsonResponse({
+            'recommendations': recommendations,
+            'count': len(recommendations),
+            'wishlist_id': wishlist_id,
+            'is_owner': request.user == wishlist.owner
+        })
+        
+    except Exception as e:
+        print(f"Error getting recommendations: {str(e)}")
+        return JsonResponse({
+            'recommendations': [],
+            'error': str(e)
+        }, status=500)
 
 
 
