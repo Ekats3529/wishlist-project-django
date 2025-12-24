@@ -178,13 +178,11 @@ class RecommendationSystem:
         if not items:
             return {'categories': [], 'popularity': 0, 'price_range': None}
         
-        # Собираем весь текст из вишлиста
         all_text = ' '.join([
             item.title.lower() + ' ' + (item.description.lower() if item.description else '')
             for item in items
         ])
         
-        # Определяем категории
         detected_categories = []
         for category, keywords in self.category_keywords.items():
             for keyword in keywords:
@@ -192,7 +190,6 @@ class RecommendationSystem:
                     detected_categories.append(category)
                     break
         
-        # Анализируем ценовой диапазон
         prices = [item.price for item in items if item.price]
         price_range = None
         if prices:
@@ -215,23 +212,18 @@ class RecommendationSystem:
         
         recommendations = []
         
-        # Добавляем рекомендации для каждой категории
         for category in categories:
             if category in self.category_recommendations:
                 category_recs = self.category_recommendations[category]
                 
-                # Если есть ценовой диапазон, можно добавить фильтрацию
-                # (в этой упрощенной версии просто берем случайные)
                 selected = random.sample(category_recs, min(3, len(category_recs)))
                 recommendations.extend(selected)
         
-        # Если рекомендаций мало, добавляем популярные товары
         if len(recommendations) < count:
             additional_needed = count - len(recommendations)
             popular = random.sample(self.popular_items, min(additional_needed, len(self.popular_items)))
             recommendations.extend(popular)
         
-        # Перемешиваем и ограничиваем количество
         random.shuffle(recommendations)
         return recommendations[:count]
     
@@ -242,14 +234,12 @@ class RecommendationSystem:
         if not items:
             return self.get_popular_recommendations(count)
         
-        # Находим наиболее частые категории
         analysis = self.analyze_wishlist(wishlist)
         categories = analysis['categories']
         
         if not categories:
             return self.get_popular_recommendations(count)
         
-        # Получаем рекомендации для этих категорий
         return self.get_recommendations_for_categories(categories, analysis['price_range'], count)
     
     def get_popular_recommendations(self, count=5):
@@ -262,15 +252,12 @@ class RecommendationSystem:
         for category_recs in self.category_recommendations.values():
             all_recs.extend(category_recs)
         
-        # Добавляем популярные товары
         all_recs.extend(self.popular_items)
         
-        # Убираем дубликаты по id
         unique_recs = {}
         for rec in all_recs:
             unique_recs[rec['id']] = rec
         
-        # Выбираем случайные
         selected_ids = random.sample(list(unique_recs.keys()), min(count, len(unique_recs)))
         return [unique_recs[id] for id in selected_ids]
     
@@ -280,14 +267,12 @@ class RecommendationSystem:
         analysis = self.analyze_wishlist(wishlist)
         existing_categories = set(analysis['categories'])
         
-        # Выбираем категории, которых еще нет в вишлисте
         available_categories = [cat for cat in self.category_recommendations.keys() 
                               if cat not in existing_categories]
         
         if not available_categories:
             available_categories = list(self.category_recommendations.keys())
         
-        # Берем по 1-2 рекомендации из разных категорий
         recommendations = []
         categories_to_use = random.sample(available_categories, min(3, len(available_categories)))
         
@@ -298,7 +283,6 @@ class RecommendationSystem:
                     rec = random.choice(category_recs)
                     recommendations.append(rec)
         
-        # Добираем до нужного количества
         if len(recommendations) < count:
             additional = count - len(recommendations)
             popular = random.sample(self.popular_items, min(additional, len(self.popular_items)))
@@ -307,7 +291,6 @@ class RecommendationSystem:
         return recommendations[:count]
 
 
-# Глобальный экземпляр системы рекомендаций
 rec_system = RecommendationSystem()
 
 def get_wishlist_recommendations(wishlist):
@@ -316,21 +299,15 @@ def get_wishlist_recommendations(wishlist):
     items = wishlist.items.all()
     
     if not items:
-        # Для пустого вишлиста - случайные идеи
         return rec_system.get_random_ideas(5)
     
-    # Анализируем вишлист
     analysis = rec_system.analyze_wishlist(wishlist)
     
-    # Выбираем стратегию рекомендаций
     if analysis['popularity'] < 3:
-        # Мало товаров - показываем разнообразные рекомендации
         return rec_system.get_diverse_recommendations(wishlist, 5)
     elif analysis['popularity'] < 10:
-        # Среднее количество товаров - дополняющие рекомендации
         return rec_system.get_complementary_recommendations(wishlist, 5)
     else:
-        # Много товаров - персонализированные рекомендации
         categories = analysis['categories']
         if categories:
             return rec_system.get_recommendations_for_categories(categories, analysis['price_range'], 5)
