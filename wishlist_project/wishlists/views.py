@@ -5,9 +5,11 @@ from .forms import WishlistForm, RegistrationForm, ProfileEditForm, ItemForm
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse, HttpResponseForbidden
 from .models import Item
-from .recsys import get_similar_items
+from .recsys import get_wishlist_recommendations
 
 User = get_user_model()
 
@@ -200,9 +202,85 @@ def delete_item(request, item_id):
 
 
 
-def item_recommendations(request, item_id):
-    item = Item.objects.get(id=item_id)
-    similar_items = get_similar_items(item)
-    data = [{'id': i.id, 'title': i.name} for i in similar_items]
-    print(data)
-    return JsonResponse({'recommendations': data})
+def wishlist_recommendations(request, wishlist_id):
+    wishlist = get_object_or_404(Wishlist, id=wishlist_id)
+
+    # Показываем только владельцу
+    if not request.user.is_authenticated or request.user != wishlist.owner:
+        return HttpResponseForbidden('Not allowed')
+
+    data = get_wishlist_recommendations(wishlist)
+    return JsonResponse(data, safe=False)
+
+
+
+
+@login_required
+@require_POST
+@csrf_exempt
+def add_recommendation(request, wishlist_id):
+    """Добавление рекомендации в вишлист через AJAX"""
+    print(f"DEBUG: add_recommendation called for wishlist_id={wishlist_id}")
+    
+    # Проверяем аутентификацию вручную
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False,
+            'error': 'Требуется авторизация'
+        }, status=401)
+    
+    wishlist = get_object_or_404(Wishlist, id=wishlist_id)
+    
+    # Проверяем, что пользователь владелец вишлиста
+    if wishlist.owner != request.user:
+        print(f"DEBUG: User {request.user} is not owner of wishlist {wishlist_id}")
+        return JsonResponse({'error': 'Недостаточно прав'}, status=403)
+    
+    try:
+        # Получаем данные из POST запроса
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
+        
+        if not title:
+            return JsonResponse({
+                'success': False,
+                'error': 'Название обязательно'
+            }, status=400)
+        
+        print(f"DEBUG: Creating item with title='{title}', description='{description}'")
+        
+        # Создаем новый предмет
+        item = Item.objects.create(
+            wishlist=wishlist,
+            title=title,
+            description=description,
+            is_reserved=False
+        )
+        
+        print(f"DEBUG: Item created with id={item.id}")
+        
+        # Возвращаем полную информацию о созданном предмете
+        from django.utils import timezone
+        from django.urls import reverse
+        
+        return JsonResponse({
+            'success': True,
+            'item_id': item.id,
+            'item': {
+                'id': item.id,
+                'title': item.title,
+                'description': item.description,
+                'price': item.price,
+                'is_reserved': item.is_reserved,
+                'created_at': item.created_at.strftime('%d.%m.%Y %H:%M'),
+                'edit_url': reverse('wishlists:edit_item', args=[item.id]),
+                'delete_url': reverse('wishlists:delete_item', args=[item.id])
+            },
+            'message': f'Предмет "{title}" успешно добавлен'
+        })
+    except Exception as e:
+        print(f"DEBUG: Exception occurred: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)

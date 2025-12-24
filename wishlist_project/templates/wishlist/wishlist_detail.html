@@ -76,14 +76,31 @@
   {% else %}
   <p class="text-center">В этом списке пока нет предметов.</p>
   {% endif %}
-
 </div>
 
-<div class="similar-items" id="similar-{{ item.id }}">
-    <p>Загрузка рекомендаций...</p>
+{% if user.is_authenticated and user == wishlist.owner %}
+<!-- Рекомендации для всего вишлиста -->
+<div class="container py-5">
+  <h2 class="mb-4">Рекомендованные товары</h2>
+  
+  <div id="wishlist-recommendations"
+       data-url="{% url 'wishlists:wishlist_recommendations' wishlist.id %}"
+       class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <!-- Загрузочный индикатор -->
+    <div class="col-12">
+      <div class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Загрузка...</span>
+        </div>
+        <p class="mt-2 text-muted">Загрузка рекомендаций...</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="{% static 'js/recommendations.js' %}"></script>
+
+{% endif %}
 {% endblock %}
 
 
