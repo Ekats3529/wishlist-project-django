@@ -1,4 +1,3 @@
-// === Recommendations.js ===
 console.log('=== Recommendations.js loaded ===');
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,9 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Получаем ID вишлиста из URL рекомендаций
-    const urlParts = url.split('/').filter(segment => segment);
-    const wishlistId = urlParts.find(segment => !isNaN(segment));
+    // Получаем ID вишлиста из data-атрибута или URL
+    let wishlistId = container.dataset.wishlistId;
+    
+    if (!wishlistId) {
+        // Пробуем извлечь из URL
+        const urlParts = url.split('/').filter(segment => segment);
+        wishlistId = urlParts.find(segment => !isNaN(segment));
+    }
     
     if (!wishlistId) {
         console.error('Could not extract wishlist ID from URL:', url);
@@ -24,8 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Получаем CSRF токен для AJAX запросов
     const csrftoken = getCookie('csrftoken');
 
-    // Сохраняем wishlistId в глобальную область видимости
+    // Сохраняем в глобальную область видимости
     window.currentWishlistId = wishlistId;
+    window.currentRecommendationsUrl = url;
+    window.currentCsrfToken = csrftoken;
+
+    // Инициализируем счетчик добавленных товаров
+    window.addedItemsCount = 0;
 
     // Функция для загрузки и отображения рекомендаций
     function loadRecommendations() {
@@ -72,22 +81,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Загружаем рекомендации при старте
     loadRecommendations();
 
+    // Добавляем обработчик для кнопки обновления
+    const refreshBtn = document.getElementById('refresh-recommendations-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.refreshRecommendations();
+        });
+    }
+
     // Сохраняем функции в глобальную область видимости
     window.addItemToWishlistGrid = addItemToWishlistGrid;
     window.showNotification = showNotification;
     window.showNotificationWithLogin = showNotificationWithLogin;
-    window.updateItemsList = updateItemsList; // Добавляем новую функцию
+    window.updateItemsList = updateItemsList;
+    window.slideAwayRecommendation = slideAwayRecommendation;
+    window.loadRandomIdeas = loadRandomIdeas;
+    window.addRecommendationToWishlist = addRecommendationToWishlist;
 });
 
 // ============ ГЛОБАЛЬНЫЕ ФУНКЦИИ ============
 
-// Делаем функцию loadRecommendations доступной глобально
-window.loadRecommendations = function() {
-    const container = document.getElementById('wishlist-recommendations');
-    if (!container) return;
+// Функция для обновления рекомендаций
+function refreshRecommendations(wishlistId, container, url, csrfToken) {
+    console.log('Refreshing recommendations...');
     
-    const url = container.dataset.url;
-    if (!url) return;
+    const refreshBtn = document.getElementById('refresh-recommendations-btn');
+    if (refreshBtn) {
+        const originalHtml = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Обновление...';
+        refreshBtn.disabled = true;
+        refreshBtn.classList.add('disabled');
+    }
     
     // Показываем индикатор загрузки
     container.innerHTML = `
@@ -100,10 +125,102 @@ window.loadRecommendations = function() {
             </div>
         </div>`;
     
-    // Перезагружаем рекомендации
+    // Добавляем параметр для принудительного обновления
+    const refreshUrl = url + '?refresh=true&t=' + Date.now();
+    
+    // Добавляем небольшую задержку для лучшего UX
     setTimeout(() => {
-        window.location.reload();
+        fetch(refreshUrl)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                const recs = Array.isArray(data) ? data : data.recommendations || [];
+                
+                if (recs.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Нет новых рекомендаций</strong>
+                                <p class="mb-2 mt-1">Добавьте больше предметов, чтобы получить новые рекомендации.</p>
+                                <button class="btn btn-sm btn-outline-info" onclick="loadRandomIdeas(${wishlistId})">
+                                    Показать случайные идеи
+                                </button>
+                            </div>
+                        </div>`;
+                } else {
+                    // Показываем новые рекомендации
+                    showRecommendations(recs, container, wishlistId, csrfToken);
+                    
+                    // Показываем уведомление
+                    if (window.showNotification) {
+                        window.showNotification('success', 'Рекомендации обновлены!');
+                    }
+                }
+                
+                // Восстанавливаем кнопку
+                if (refreshBtn) {
+                    setTimeout(() => {
+                        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Обновить рекомендации';
+                        refreshBtn.disabled = false;
+                        refreshBtn.classList.remove('disabled');
+                    }, 500);
+                }
+            })
+            .catch(err => {
+                console.error('Error refreshing recommendations:', err);
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Не удалось обновить рекомендации</strong>
+                            <p class="mb-0 mt-1">Попробуйте еще раз.</p>
+                        </div>
+                    </div>`;
+                
+                // Восстанавливаем кнопку
+                if (refreshBtn) {
+                    setTimeout(() => {
+                        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Обновить рекомендации';
+                        refreshBtn.disabled = false;
+                        refreshBtn.classList.remove('disabled');
+                    }, 500);
+                }
+            });
     }, 500);
+}
+
+// Глобальная функция для обновления рекомендаций (вызывается из HTML)
+window.refreshRecommendations = function() {
+    const container = document.getElementById('wishlist-recommendations');
+    if (!container) {
+        console.error('Container not found');
+        return;
+    }
+    
+    const url = container.dataset.url || window.currentRecommendationsUrl;
+    if (!url) {
+        console.error('URL not found');
+        return;
+    }
+    
+    const wishlistId = window.currentWishlistId || container.dataset.wishlistId;
+    const csrfToken = window.currentCsrfToken || getCookie('csrftoken');
+    
+    if (!wishlistId) {
+        console.error('Wishlist ID not found');
+        return;
+    }
+    
+    // Вызываем основную функцию с параметрами
+    refreshRecommendations(wishlistId, container, url, csrfToken);
+};
+
+// Альтернативная глобальная функция
+window.refreshRecommendationsGlobal = function() {
+    window.refreshRecommendations();
 };
 
 // Функция для загрузки случайных идей
@@ -168,7 +285,7 @@ function showLocalIdeas(container, wishlistId) {
 function showRecommendations(recs, container, wishlistId, csrftoken) {
     const recommendationsHTML = recs.map(rec => `
         <div class="col">
-            <div class="card h-100 shadow-sm">
+            <div class="card h-100 shadow-sm recommendation-card">
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title">${escapeHtml(rec.name || rec.title || 'Идея')}</h5>
                     
@@ -212,7 +329,7 @@ function showRecommendations(recs, container, wishlistId, csrftoken) {
             this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Добавляется...';
             this.disabled = true;
             
-            addRecommendationToWishlist(itemData, this, csrftoken);
+            window.addRecommendationToWishlist(itemData, this, csrftoken);
         });
     });
 }
@@ -224,6 +341,9 @@ window.addRecommendationToWishlist = function(itemData, buttonElement, csrfToken
     }
     
     console.log('addRecommendationToWishlist called with:', itemData);
+    
+    // Увеличиваем счетчик добавленных товаров
+    window.addedItemsCount = (window.addedItemsCount || 0) + 1;
     
     // Формируем правильный URL для добавления рекомендации
     const addUrl = `/wishlists/${itemData.wishlist_id}/add_recommendation/`;
@@ -274,53 +394,23 @@ window.addRecommendationToWishlist = function(itemData, buttonElement, csrfToken
             buttonElement.classList.remove('btn-primary');
             buttonElement.classList.add('btn-success');
             
-            // 2. Проверяем, пустой ли вишлист
-            const isWishlistEmpty = checkIfWishlistEmpty();
-            
-            if (isWishlistEmpty) {
-                console.log('Wishlist is empty, updating items list dynamically');
-                
-                // Обновляем список предметов без перезагрузки страницы
-                updateItemsList(itemData.wishlist_id, csrfToken).then(() => {
-                    // После обновления списка предметов, убираем рекомендацию
-                    removeRecommendationCard(buttonElement, itemData.wishlist_id);
-                });
-                
-                return;
-            }
-            
-            // 3. Для непустых вишлистов добавляем товар динамически
-            if (window.addItemToWishlistGrid) {
-                console.log('Calling addItemToWishlistGrid...');
-                try {
-                    window.addItemToWishlistGrid(data.item || {
-                        id: data.item_id,
-                        title: itemData.title,
-                        description: itemData.description
-                    }, csrfToken);
-                    
-                    // Убираем рекомендацию после успешного добавления
-                    removeRecommendationCard(buttonElement, itemData.wishlist_id);
-                } catch (error) {
-                    console.error('Error in addItemToWishlistGrid:', error);
-                    // Если ошибка, перезагружаем страницу
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                    return;
-                }
-            } else {
-                console.warn('addItemToWishlistGrid function not found, reloading page');
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-                return;
-            }
-            
-            // 5. Показываем уведомление об успехе
+            // 2. Показываем уведомление об успехе
             if (window.showNotification) {
                 window.showNotification('success', `"${itemData.title}" успешно добавлен в вишлист!`);
             }
+            
+            // 3. Обновляем список предметов (если он есть на странице)
+            if (window.updateItemsList) {
+                console.log('Updating items list...');
+                window.updateItemsList(itemData.wishlist_id, csrfToken).catch(() => {
+                    console.log('Failed to update items list, will reload page instead');
+                });
+            }
+            
+            // 4. Убираем рекомендацию с анимацией через 1 секунду
+            setTimeout(() => {
+                slideAwayRecommendation(buttonElement);
+            }, 1000);
             
         } else {
             throw new Error(data.error || 'Неизвестная ошибка');
@@ -328,6 +418,9 @@ window.addRecommendationToWishlist = function(itemData, buttonElement, csrfToken
     })
     .catch(error => {
         console.error('Error adding recommendation:', error);
+        
+        // Уменьшаем счетчик при ошибке
+        window.addedItemsCount = Math.max(0, (window.addedItemsCount || 0) - 1);
         
         // Восстанавливаем кнопку
         buttonElement.innerHTML = originalText;
@@ -350,7 +443,83 @@ window.addRecommendationToWishlist = function(itemData, buttonElement, csrfToken
     });
 };
 
-// НОВАЯ ФУНКЦИЯ: Проверка, пустой ли вишлист
+// Функция для плавного удаления рекомендации
+function slideAwayRecommendation(buttonElement) {
+    const card = buttonElement.closest('.col');
+    if (card) {
+        // Получаем позицию и размеры карточки
+        const rect = card.getBoundingClientRect();
+        const cardHeight = rect.height;
+        
+        // Анимация уезжания вверх и исчезновения
+        card.style.transition = 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        card.style.transform = 'translateY(-' + (cardHeight + 20) + 'px)';
+        card.style.opacity = '0';
+        card.style.maxHeight = '0';
+        card.style.marginTop = '0';
+        card.style.marginBottom = '0';
+        card.style.paddingTop = '0';
+        card.style.paddingBottom = '0';
+        card.style.border = 'none';
+        
+        // После завершения анимации удаляем элемент
+        setTimeout(() => {
+            card.style.display = 'none';
+            
+            // Проверяем, остались ли еще рекомендации
+            checkIfRemainingRecommendations();
+        }, 600);
+    }
+}
+
+// Функция для проверки оставшихся рекомендаций
+function checkIfRemainingRecommendations() {
+    const container = document.getElementById('wishlist-recommendations');
+    if (!container) return;
+    
+    // Считаем видимые карточки
+    const allCards = container.querySelectorAll('.col');
+    const hiddenCards = container.querySelectorAll('.col[style*="display: none"]');
+    
+    // Если все карточки скрыты или их не осталось
+    if (hiddenCards.length === allCards.length || allCards.length === 0) {
+        setTimeout(() => {
+            const wishlistId = window.currentWishlistId;
+            
+            // Создаем плавное появление нового сообщения
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'col-12';
+            messageDiv.innerHTML = `
+                <div class="alert alert-success" style="opacity: 0; transform: translateY(20px); transition: all 0.5s ease;">
+                    <i class="bi bi-check-circle"></i>
+                    <strong>Рекомендации добавлены!</strong>
+                    <p class="mb-2 mt-1">Все рекомендации были добавлены в ваш вишлист.</p>
+                    <div class="d-flex gap-2">
+                        <button onclick="refreshRecommendationsGlobal()" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-arrow-clockwise"></i> Загрузить новые
+                        </button>
+                        <button onclick="loadRandomIdeas(${wishlistId})" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-lightbulb"></i> Случайные идеи
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Очищаем контейнер и добавляем новое сообщение
+            container.innerHTML = '';
+            container.appendChild(messageDiv);
+            
+            // Анимация появления
+            setTimeout(() => {
+                const alertDiv = messageDiv.querySelector('.alert');
+                alertDiv.style.opacity = '1';
+                alertDiv.style.transform = 'translateY(0)';
+            }, 10);
+        }, 300);
+    }
+}
+
+// Функция для проверки, пустой ли вишлист
 function checkIfWishlistEmpty() {
     // Ищем основной контейнер с предметами
     const mainGrid = document.querySelector('.row.row-cols-1.row-cols-md-2.row-cols-lg-3.g-4');
@@ -372,7 +541,7 @@ function checkIfWishlistEmpty() {
     return items.length === 0 || hasEmptyMessage;
 }
 
-// НОВАЯ ФУНКЦИЯ: Обновление списка предметов
+// Функция для обновления списка предметов
 async function updateItemsList(wishlistId, csrfToken) {
     console.log('Updating items list for wishlist:', wishlistId);
     
@@ -393,68 +562,48 @@ async function updateItemsList(wishlistId, csrfToken) {
         const html = await response.text();
         
         // Находим контейнер для предметов
-        const itemsContainer = document.querySelector('#items-container') || 
-                              document.querySelector('.items-container') ||
+        const itemsContainer = document.querySelector('#items-grid') || 
                               document.querySelector('.row.row-cols-1.row-cols-md-2.row-cols-lg-3.g-4') ||
-                              document.querySelector('p.text-center');
+                              document.querySelector('#empty-wishlist-message');
         
         if (itemsContainer) {
             // Если нашли сообщение о пустом вишлисте, заменяем его на сетку
-            if (itemsContainer.tagName === 'P' && itemsContainer.className.includes('text-center')) {
+            if (itemsContainer.id === 'empty-wishlist-message') {
                 const newContainer = document.createElement('div');
                 newContainer.className = 'row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4';
                 newContainer.id = 'items-grid';
                 newContainer.innerHTML = html;
+                
+                // Анимация появления
+                newContainer.style.opacity = '0';
+                newContainer.style.transform = 'translateY(20px)';
                 itemsContainer.replaceWith(newContainer);
+                
+                setTimeout(() => {
+                    newContainer.style.transition = 'all 0.5s ease';
+                    newContainer.style.opacity = '1';
+                    newContainer.style.transform = 'translateY(0)';
+                }, 10);
             } else {
-                // Иначе просто обновляем содержимое
-                itemsContainer.innerHTML = html;
+                // Иначе просто обновляем содержимое с анимацией
+                itemsContainer.style.opacity = '0.7';
+                itemsContainer.style.transition = 'opacity 0.3s ease';
+                
+                setTimeout(() => {
+                    itemsContainer.innerHTML = html;
+                    itemsContainer.style.opacity = '1';
+                }, 300);
             }
             
             console.log('Items list updated successfully');
         } else {
             console.warn('Could not find items container, reloading page');
-            location.reload();
+            return Promise.reject('Container not found');
         }
     } catch (error) {
         console.error('Error updating items list:', error);
-        // При ошибке перезагружаем страницу
-        location.reload();
+        return Promise.reject(error);
     }
-}
-
-// НОВАЯ ФУНКЦИЯ: Удаление карточки рекомендации
-function removeRecommendationCard(buttonElement, wishlistId) {
-    setTimeout(() => {
-        const card = buttonElement.closest('.col');
-        if (card) {
-            card.style.opacity = '0';
-            card.style.transform = 'translateX(-20px)';
-            card.style.transition = 'all 0.5s';
-            setTimeout(() => {
-                card.remove();
-                
-                // Если рекомендации закончились, показываем сообщение
-                const container = document.getElementById('wishlist-recommendations');
-                if (container) {
-                    const remainingCards = container.querySelectorAll('.col');
-                    if (remainingCards.length === 0) {
-                        container.innerHTML = `
-                            <div class="col-12">
-                                <div class="alert alert-success">
-                                    <i class="bi bi-check-circle"></i>
-                                    <strong>Все рекомендации добавлены!</strong>
-                                    <p class="mb-2 mt-1">Добавьте больше предметов в вишлист для получения новых рекомендаций.</p>
-                                    <button class="btn btn-sm btn-outline-success" onclick="loadRandomIdeas(${wishlistId})">
-                                        Показать еще идеи
-                                    </button>
-                                </div>
-                            </div>`;
-                    }
-                }
-            }, 500);
-        }
-    }, 1000);
 }
 
 // Функция для добавления товара в основную сетку вишлиста
@@ -466,14 +615,15 @@ function addItemToWishlistGrid(itemData, csrfToken) {
     console.log('addItemToWishlistGrid called with:', itemData);
     
     // Находим контейнер с основными предметами
-    let mainGrid = document.querySelector('.row.row-cols-1.row-cols-md-2.row-cols-lg-3.g-4');
+    let mainGrid = document.querySelector('#items-grid') || 
+                  document.querySelector('.row.row-cols-1.row-cols-md-2.row-cols-lg-3.g-4');
     
     // Если контейнер не найден, значит вишлист пустой
     if (!mainGrid) {
         console.log('Grid not found, trying to create one...');
         
         // Находим сообщение о пустом вишлисте
-        const emptyMessage = document.querySelector('p.text-center');
+        const emptyMessage = document.querySelector('#empty-wishlist-message');
         if (emptyMessage && (emptyMessage.textContent.includes('нет предметов') || 
                             emptyMessage.textContent.includes('пока нет предметов'))) {
             console.log('Found empty message, replacing it with grid');
