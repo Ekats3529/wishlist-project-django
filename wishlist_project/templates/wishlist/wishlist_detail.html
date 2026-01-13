@@ -21,14 +21,45 @@
       {% endif %}
       Создан: {{ wishlist.created_at|date:"d.m.Y H:i" }}
     </p>
-    <a href="{% url 'wishlists:edit_wishlist' wishlist.id %}" class="btn btn-outline-primary btn-sm">Редактировать список</a>
+    
+    <!-- Кнопки управления вишлистом -->
+    {% if user == wishlist.owner %}
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <a href="{% url 'wishlists:edit_wishlist' wishlist.id %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-pencil"></i> Редактировать список
+      </a>
+      
+      <!-- Экспорт в JSON -->
+      <a href="{% url 'wishlists:export_wishlist' wishlist.id %}" 
+         class="btn btn-outline-success btn-sm"
+         download>
+        <i class="bi bi-download"></i> Экспорт в JSON
+      </a>
+      
+      <!-- Импорт в существующий -->
+      <a href="{% url 'wishlists:import_to_existing_wishlist' wishlist.id %}" 
+         class="btn btn-outline-info btn-sm">
+        <i class="bi bi-upload"></i> Импортировать предметы
+      </a>
+      
+      <!-- Удаление вишлиста (ДОБАВЛЕНО) -->
+      <a href="{% url 'wishlists:delete_wishlist' wishlist.id %}" 
+         class="btn btn-outline-danger btn-sm">
+        <i class="bi bi-trash"></i> Удалить список
+      </a>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Заголовок для предметов -->
   <h2 class="mb-4">Предметы</h2>
 
   <!-- Добавить новый предмет -->
-  <a href="{% url 'wishlists:add_item' wishlist.id %}" class="btn btn-primary mb-4">Добавить предмет</a>
+  {% if user == wishlist.owner %}
+  <a href="{% url 'wishlists:add_item' wishlist.id %}" class="btn btn-primary mb-4">
+    <i class="bi bi-plus-circle"></i> Добавить предмет
+  </a>
+  {% endif %}
 
   <!-- Сетка предметов -->
   {% if wishlist.items.all %}
@@ -54,17 +85,22 @@
             <span class="badge bg-success">Доступен</span>
             {% endif %}
           </p>
+          
+          <!-- Кнопки управления предметом (только для владельца) -->
+          {% if user == wishlist.owner %}
           <div class="d-flex gap-2 mt-2">
             <a href="{% url 'wishlists:edit_item' item.id %}" class="btn btn-outline-primary btn-sm flex-fill">
-                Редактировать
+              <i class="bi bi-pencil"></i> Редактировать
             </a>
             <form action="{% url 'wishlists:delete_item' item.id %}" method="post" class="flex-fill">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                    Удалить
-                </button>
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-danger btn-sm w-100"
+                      onclick="return confirm('Вы уверены, что хотите удалить этот предмет?')">
+                <i class="bi bi-trash"></i> Удалить
+              </button>
             </form>
           </div>
+          {% endif %}
         </div>
         <div class="card-footer text-muted">
           Создан: {{ item.created_at|date:"d.m.Y H:i" }}
@@ -74,7 +110,13 @@
     {% endfor %}
   </div>
   {% else %}
-  <p class="text-center" id="empty-wishlist-message">В этом списке пока нет предметов.</p>
+  <div class="text-center py-5">
+    <i class="bi bi-gift display-1 text-muted mb-3"></i>
+    <p class="text-muted fs-5" id="empty-wishlist-message">В этом списке пока нет предметов.</p>
+    {% if user == wishlist.owner %}
+    <p class="text-muted">Начните с добавления первого предмета или импортируйте существующие из JSON файла.</p>
+    {% endif %}
+  </div>
   {% endif %}
 </div>
 

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}
+  Импорт в {{ wishlist.title }} — Wishlist
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0">Импорт предметов в "{{ wishlist.title }}"</h3>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-4">
+            Выберите JSON файл для импорта предметов в этот вишлист. 
+            Будут импортированы только предметы (заголовок вишлиста из файла игнорируется).
+          </p>
+          
+          {% if error %}
+          <div class="alert alert-danger">
+            {{ error }}
+          </div>
+          {% endif %}
+          
+          {% if success %}
+          <div class="alert alert-success">
+            {{ success }}
+          </div>
+          {% endif %}
+          
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+              <label for="json_file" class="form-label">JSON файл с предметами</label>
+              <input type="file" class="form-control" id="json_file" name="json_file" accept=".json" required>
+              <div class="form-text">
+                Файл должен содержать массив предметов в поле "items"
+              </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-upload"></i> Импортировать предметы
+              </button>
+              <a href="{% url 'wishlists:wishlist_detail' wishlist.id %}" class="btn btn-outline-secondary">
+                Назад к вишлисту
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      {% if imported_count %}
+      <div class="text-center mt-4">
+        <a href="{% url 'wishlists:wishlist_detail' wishlist.id %}" class="btn btn-success">
+          Перейти к вишлисту ({{ imported_count }} новых предметов)
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

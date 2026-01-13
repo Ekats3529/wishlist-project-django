@@ -5,7 +5,18 @@
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Списки желаний</h1>
-        <a href="{% url 'wishlists:create' %}" class="btn btn-primary">Создать новый список</a>
+        <div class="d-flex gap-2">
+          {% if user.is_authenticated %}
+            <a href="{% url 'wishlists:import_wishlist' %}" class="btn btn-outline-primary">
+              <i class="bi bi-upload"></i> Импорт вишлиста
+            </a>
+            <a href="{% url 'wishlists:create' %}" class="btn btn-primary">
+              <i class="bi bi-plus-circle"></i> Создать новый список
+            </a>
+          {% else %}
+            <a href="{% url 'wishlists:create' %}" class="btn btn-primary">Создать новый список</a>
+          {% endif %}
+        </div>
     </div>
 
     {% if wishlists %}
@@ -15,25 +26,62 @@
                 <div class="card h-100 shadow-sm">
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title">{{ wishlist.title }}</h5>
-                        <p class="card-text">{{ wishlist.description|truncatechars:100 }}</p>
-                        <p class="mt-auto">
+                        <p class="card-text text-muted">{{ wishlist.description|truncatechars:100|default:"Без описания" }}</p>
+                        
+                        <div class="mt-auto">
+                          <p>
                             {% if wishlist.is_public %}
-                                <span class="badge bg-success">Публичный</span>
+                              <span class="badge bg-success">Публичный</span>
                             {% else %}
-                                <span class="badge bg-secondary">Приватный</span>
+                              <span class="badge bg-secondary">Приватный</span>
                             {% endif %}
-                        </p>
-                        <a href="{% url 'wishlists:wishlist_detail' wishlist.id %}" class="btn btn-outline-primary mt-2">Открыть список</a>
+                          </p>
+                          
+                          <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                              <i class="bi bi-person"></i> {{ wishlist.owner.username }}
+                            </small>
+                            <small class="text-muted">
+                              <i class="bi bi-gift"></i> {{ wishlist.items.count }} предметов
+                            </small>
+                          </div>
+                        </div>
+                        
+                        <a href="{% url 'wishlists:wishlist_detail' wishlist.id %}" 
+                           class="btn btn-outline-primary mt-3 w-100">
+                          <i class="bi bi-eye"></i> Просмотр
+                        </a>
                     </div>
                     <div class="card-footer text-muted">
-                        Создан: {{ wishlist.created_at|date:"d.m.Y H:i" }}
+                      <small>
+                        <i class="bi bi-calendar"></i> {{ wishlist.created_at|date:"d.m.Y H:i" }}
+                      </small>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
     {% else %}
-        <p>Пока нет списков желаний. Создайте первый!</p>
+        <div class="text-center py-5">
+          <i class="bi bi-gift display-1 text-muted mb-3"></i>
+          <h3 class="text-muted">Пока нет списков желаний</h3>
+          <p class="text-muted mb-4">Создайте первый список или импортируйте существующий из JSON файла</p>
+          {% if user.is_authenticated %}
+          <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'wishlists:import_wishlist' %}" class="btn btn-outline-primary">
+              <i class="bi bi-upload"></i> Импорт вишлиста
+            </a>
+            <a href="{% url 'wishlists:create' %}" class="btn btn-primary">
+              <i class="bi bi-plus-circle"></i> Создать первый список
+            </a>
+          </div>
+          {% else %}
+          <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'login' %}" class="btn btn-outline-primary">Войти</a>
+            <a href="{% url 'wishlists:register' %}" class="btn btn-primary">Зарегистрироваться</a>
+          </div>
+          {% endif %}
+        </div>
     {% endif %}
 </div>
 {% endblock %}

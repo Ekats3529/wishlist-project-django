@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}
+  Импорт вишлиста — Wishlist
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0">Импорт вишлиста из JSON</h3>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-4">
+            Выберите JSON файл для импорта вишлиста. Файл должен содержать структуру вишлиста с предметами.
+          </p>
+          
+          {% if error %}
+          <div class="alert alert-danger">
+            {{ error }}
+          </div>
+          {% endif %}
+          
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+              <label for="json_file" class="form-label">JSON файл</label>
+              <input type="file" class="form-control" id="json_file" name="json_file" accept=".json" required>
+              <div class="form-text">
+                Поддерживается только формат JSON. Пример структуры можно скачать, экспортировав любой вишлист.
+              </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-upload"></i> Импортировать вишлист
+              </button>
+              <a href="{% url 'wishlists:index' %}" class="btn btn-outline-secondary">
+                Отмена
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

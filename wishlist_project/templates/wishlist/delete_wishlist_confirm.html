@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}
+  Удаление вишлиста — Wishlist
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow border-danger">
+        <div class="card-header bg-danger text-white">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <h3 class="mb-0">Подтверждение удаления</h3>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-danger">
+            <div class="d-flex">
+              <i class="bi bi-exclamation-octagon me-3 display-6"></i>
+              <div>
+                <h4 class="alert-heading">Внимание!</h4>
+                <p class="mb-0">Вы собираетесь удалить вишлист "<strong>{{ wishlist.title }}</strong>".</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card mb-4">
+            <div class="card-body">
+              <h5 class="card-title">Информация о вишлисте</h5>
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>Название:</span>
+                  <strong>{{ wishlist.title }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>Описание:</span>
+                  <span class="text-muted">{{ wishlist.description|default:"Без описания" }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>Статус:</span>
+                  {% if wishlist.is_public %}
+                    <span class="badge bg-success">Публичный</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Приватный</span>
+                  {% endif %}
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>Дата создания:</span>
+                  <span>{{ wishlist.created_at|date:"d.m.Y H:i" }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>Количество предметов:</span>
+                  <span class="badge bg-primary">{{ item_count }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="alert alert-warning">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Это действие нельзя отменить!</strong> Все предметы в этом вишлисте также будут удалены.
+          </div>
+          
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-danger btn-lg">
+                <i class="bi bi-trash me-2"></i> Да, удалить вишлист
+              </button>
+              <a href="{% url 'wishlists:wishlist_detail' wishlist.id %}" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-x-circle me-2"></i> Отмена, вернуться к вишлисту
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

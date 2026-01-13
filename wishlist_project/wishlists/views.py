@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from .models import Wishlist, Item
@@ -7,9 +8,12 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponseBadRequest, HttpResponse
 from .models import Item
 from .recsys import get_wishlist_recommendations
+from django.core.exceptions import ValidationError
+from django.core.serializers import serialize
+from django.utils.text import slugify
 
 User = get_user_model()
 
@@ -305,3 +309,201 @@ def add_recommendation(request, wishlist_id):
             'success': False,
             'error': str(e)
         }, status=400)
+    
+
+
+@login_required
+def export_wishlist(request, wishlist_id):
+    """Экспорт вишлиста в JSON"""
+    wishlist = get_object_or_404(Wishlist, pk=wishlist_id)
+    
+    # Проверяем права доступа
+    if wishlist.owner != request.user:
+        return HttpResponseForbidden("У вас нет прав для экспорта этого вишлиста")
+    
+    # Собираем данные вишлиста
+    wishlist_data = {
+        'title': wishlist.title,
+        'description': wishlist.description,
+        'is_public': wishlist.is_public,
+        'created_at': wishlist.created_at.isoformat() if wishlist.created_at else None,
+        'items': []
+    }
+    
+    # Добавляем предметы
+    for item in wishlist.items.all():
+        item_data = {
+            'title': item.title,
+            'description': item.description,
+            'price': str(item.price) if item.price else None,
+            'is_reserved': item.is_reserved,
+            'image': item.image.url if item.image else None,
+            'created_at': item.created_at.isoformat() if item.created_at else None
+        }
+        wishlist_data['items'].append(item_data)
+    
+    # Создаем JSON ответ
+    response = HttpResponse(
+        json.dumps(wishlist_data, ensure_ascii=False, indent=2),
+        content_type='application/json'
+    )
+    response['Content-Disposition'] = f'attachment; filename="wishlist_{wishlist.title}_{timezone.now().date()}.json"'
+    
+    return response
+
+
+@login_required
+def import_wishlist(request):
+    """Импорт вишлиста из JSON"""
+    template = 'wishlist/import_wishlist.html'
+    
+    if request.method == 'POST':
+        if 'json_file' not in request.FILES:
+            return render(request, template, {
+                'error': 'Пожалуйста, выберите JSON файл',
+                'form': None
+            })
+        
+        json_file = request.FILES['json_file']
+        
+        try:
+            # Читаем и парсим JSON
+            data = json.loads(json_file.read().decode('utf-8'))
+            
+            # Создаем новый вишлист
+            wishlist = Wishlist.objects.create(
+                owner=request.user,
+                title=data.get('title', 'Импортированный вишлист'),
+                description=data.get('description', ''),
+                is_public=data.get('is_public', False)
+            )
+            
+            # Импортируем предметы
+            items_data = data.get('items', [])
+            imported_count = 0
+            
+            for item_data in items_data:
+                try:
+                    # Создаем предмет
+                    item = Item.objects.create(
+                        wishlist=wishlist,
+                        title=item_data.get('title', 'Без названия'),
+                        description=item_data.get('description', ''),
+                        price=item_data.get('price'),
+                        is_reserved=item_data.get('is_reserved', False)
+                    )
+                    imported_count += 1
+                except Exception as e:
+                    print(f"Error importing item: {e}")
+                    continue
+            
+            # Перенаправляем на страницу вишлиста
+            return redirect('wishlists:wishlist_detail', wishlist_id=wishlist.id)
+            
+        except json.JSONDecodeError:
+            return render(request, template, {
+                'error': 'Неверный формат JSON файла',
+                'form': None
+            })
+        except Exception as e:
+            return render(request, template, {
+                'error': f'Ошибка при импорте: {str(e)}',
+                'form': None
+            })
+    
+    return render(request, template, {'form': None})
+
+
+@login_required
+def import_to_existing_wishlist(request, wishlist_id):
+    """Импорт предметов в существующий вишлист"""
+    wishlist = get_object_or_404(Wishlist, pk=wishlist_id)
+    
+    # Проверяем права доступа
+    if wishlist.owner != request.user:
+        return HttpResponseForbidden("У вас нет прав для импорта в этот вишлист")
+    
+    template = 'wishlist/import_to_existing.html'
+    
+    if request.method == 'POST':
+        if 'json_file' not in request.FILES:
+            return render(request, template, {
+                'error': 'Пожалуйста, выберите JSON файл',
+                'wishlist': wishlist
+            })
+        
+        json_file = request.FILES['json_file']
+        
+        try:
+            data = json.loads(json_file.read().decode('utf-8'))
+            items_data = data.get('items', [])
+            imported_count = 0
+            
+            for item_data in items_data:
+                try:
+                    # # Проверяем, не существует ли уже предмет с таким названием
+                    # existing_item = wishlist.items.filter(
+                    #     title=item_data.get('title')
+                    # ).first()
+                    
+                    # if not existing_item:
+                    Item.objects.create(
+                        wishlist=wishlist,
+                        title=item_data.get('title', 'Без названия'),
+                        description=item_data.get('description', ''),
+                        price=item_data.get('price'),
+                        is_reserved=item_data.get('is_reserved', False)
+                    )
+                    imported_count += 1
+                except Exception as e:
+                    print(f"Error importing item: {e}")
+                    continue
+            
+            return render(request, template, {
+                'wishlist': wishlist,
+                'success': f'Успешно импортировано {imported_count} предметов',
+                'imported_count': imported_count
+            })
+            
+        except json.JSONDecodeError:
+            return render(request, template, {
+                'wishlist': wishlist,
+                'error': 'Неверный формат JSON файла'
+            })
+        except Exception as e:
+            return render(request, template, {
+                'wishlist': wishlist,
+                'error': f'Ошибка при импорте: {str(e)}'
+            })
+    
+    return render(request, template, {'wishlist': wishlist})
+
+
+
+
+@login_required
+def delete_wishlist(request, wishlist_id):
+    """Удаление вишлиста (упрощенная версия без messages)"""
+    wishlist = get_object_or_404(Wishlist, pk=wishlist_id)
+    
+    # Проверяем права доступа
+    if wishlist.owner != request.user:
+        return HttpResponseForbidden('У вас нет прав для удаления этого вишлиста')
+    
+    template = 'wishlist/delete_wishlist_confirm.html'
+    
+    if request.method == 'POST':
+        # Получаем имя владельца для редиректа
+        owner_username = wishlist.owner.username
+        
+        # Удаляем вишлист
+        wishlist.delete()
+        
+        # Перенаправляем на профиль пользователя
+        return redirect('wishlists:profile', username=owner_username)
+    
+    # GET запрос - показываем страницу подтверждения
+    return render(request, template, {
+        'wishlist': wishlist,
+        'item_count': wishlist.items.count()
+    })
